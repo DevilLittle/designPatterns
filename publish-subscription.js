@@ -1,4 +1,6 @@
-// 一个播放器类
+/**
+ * 一个播放器类
+ */
 class Player{
     constructor(){
         // 初始化观察者列表
