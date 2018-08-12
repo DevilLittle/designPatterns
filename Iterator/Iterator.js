@@ -1,18 +1,18 @@
-const $ = require('jquery') ;
+/**
+ * 在Node环境下运行Jquery
+ */
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
+const { window } = new JSDOM(`<!DOCTYPE html>`);
+const $ = require('jquery')(window);
 
-// import $ from 'jquery';
-//
-// console.log(wer,'1111');
-// /**
-//  * Jquery的$each
-//  */
-// $.each([1, 2, 3], function( i, n ){
-//     console.log( '当前下标为： '+ i,'当前值为:' + n );
-// });
-// console.log()
-$(document).ready(function () {
-    
-})
+/**
+ * Jquery的$each
+ */
+$.each([1, 2, 3], function( i, n ){
+    // console.log( '当前下标为： '+ i,'当前值为:' + n );
+});
+
 /**
  * 自己实现迭代器
  */
@@ -73,30 +73,28 @@ class Iterator {
 
 let compareIsEqual = function (iterator1, iterator2) {
     if (iterator1.length !== iterator2.length) {
-        console.log('iterator1和iterator2不相等');
+        throw new Error('iterator1和iterator2不相等');
     }
     while (!iterator1.isDone() && !iterator2.isDone()) {
         if (iterator1.getCurrentItem() !== iterator2.getCurrentItem()) {
-            console.log('iterator1和iterator2不相等');
+            throw new Error('iterator1和iterator2不相等');
         }
 
         iterator1.next();
         iterator2.next();
     }
 
-    //TODO 不执行之后的代码
     console.log('iterator1和iterator2相等');
 };
 
 let iterator1 = new Iterator([1, 2, 3]);
 let iterator2 = new Iterator([1, 2, 4]);
-compareIsEqual(iterator1, iterator2);
+// compareIsEqual(iterator1, iterator2);
 
 /**
  * 迭代类数组对象和字面量对象
  */
-function isArrayLike( obj ) {
-
+function isArrayLike(obj) {
     var length = !!obj && "length" in obj && obj.length,
         type = toType( obj );
 
@@ -107,6 +105,39 @@ function isArrayLike( obj ) {
     return type === "array" || length === 0 ||
         typeof length === "number" && length > 0 && ( length - 1 ) in obj;
 }
-$.each = function (obj,callback) {
-    let isArray = isArraylike
-}
+let iteratorFunc = function (obj,callback) {
+
+    console.log($.isArrayLike);
+    let isArray = $.isArrayLike(obj);
+   // let isArray = $.isArrayLike(obj);
+   console.log(isArray);
+
+    /**
+     * 迭代类数组对象
+     */
+   if(isArray){
+       for(let i=0;i<obj.length;i++){
+           value = callback.call(obj[i],i,obj[i]);
+
+           if(value === false){
+               break;
+           }
+       }
+   }else {
+       /**
+        * 迭代对象
+        */
+
+       for(let i in obj){
+           value = callback.call(obj[i],i,obj[i]);
+
+           if(value === false){
+               break;
+           }
+       }
+   }
+
+   return obj;
+};
+
+iteratorFunc([1,2,3]);
