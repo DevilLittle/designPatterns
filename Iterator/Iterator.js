@@ -2,14 +2,14 @@
  * 在Node环境下运行Jquery
  */
 const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
-const { window } = new JSDOM(`<!DOCTYPE html>`);
+const {JSDOM} = jsdom;
+const {window} = new JSDOM(`<!DOCTYPE html>`);
 const $ = require('jquery')(window);
 
 /**
  * Jquery的$each
  */
-$.each([1, 2, 3], function( i, n ){
+$.each([1, 2, 3], function (i, n) {
     // console.log( '当前下标为： '+ i,'当前值为:' + n );
 });
 
@@ -94,50 +94,34 @@ let iterator2 = new Iterator([1, 2, 4]);
 /**
  * 迭代类数组对象和字面量对象
  */
-function isArrayLike(obj) {
-    var length = !!obj && "length" in obj && obj.length,
-        type = toType( obj );
 
-    if ( isFunction( obj ) || isWindow( obj ) ) {
-        return false;
-    }
+$.each = function (obj, callback) {
 
-    return type === "array" || length === 0 ||
-        typeof length === "number" && length > 0 && ( length - 1 ) in obj;
-}
-let iteratorFunc = function (obj,callback) {
-
-    console.log($.isArrayLike);
-    let isArray = $.isArrayLike(obj);
-   // let isArray = $.isArrayLike(obj);
-   console.log(isArray);
+    let isArray = isArrayLike(obj);
+    let value;
 
     /**
      * 迭代类数组对象
      */
-   if(isArray){
-       for(let i=0;i<obj.length;i++){
-           value = callback.call(obj[i],i,obj[i]);
+    if (isArray) {
+        for (let i = 0; i < obj.length; i++) {
+            value = callback.call(obj[i], i, obj[i]);
 
-           if(value === false){
-               break;
-           }
-       }
-   }else {
-       /**
-        * 迭代对象
-        */
+            if (value === false) {
+                break;
+            }
+        }
+    } else {
+        /**
+         * 迭代对象
+         */
+        for (let i in obj) {
+            value = callback.call(obj[i], i, obj[i]);
 
-       for(let i in obj){
-           value = callback.call(obj[i],i,obj[i]);
-
-           if(value === false){
-               break;
-           }
-       }
-   }
-
-   return obj;
+            if (value === false) {
+                break;
+            }
+        }
+    }
+    return obj;
 };
-
-iteratorFunc([1,2,3]);

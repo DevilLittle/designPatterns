@@ -1,5 +1,13 @@
 #### 迭代器模式
-一、迭代器
+一、迭代器模式的定义
+迭代器模式(Iterator)：提供一种方法顺序一个聚合对象中各个元素，而又不暴露该对象内部表示。
+
+迭代器的几个特点是：
+
+访问一个聚合对象的内容而无需暴露它的内部表示。
+为遍历不同的集合结构提供一个统一的接口，从而支持同样的算法在不同的集合结构上进行操作。
+遍历的同时更改迭代器所在的集合结构可能会导致问题（比如C#的foreach里不允许修改item）。
+
 二、迭代器的实现
 ```
 /**
@@ -110,3 +118,117 @@ compareIsEqual(iterator1, iterator2);    //iterator1和iterator2相等
 四、迭代类数组对象和字面量对象
 
 无论是内部迭代器还是外部迭代器，只要被迭代的聚合对象具有length属性而且可以用下标访问，那它就可以被迭代。
+```
+$.each = function (obj, callback) {
+
+    let isArray = isArrayLike(obj);
+    let value;
+
+    /**
+     * 迭代类数组对象
+     */
+    if (isArray) {
+        for (let i = 0; i < obj.length; i++) {
+            value = callback.call(obj[i], i, obj[i]);
+
+            if (value === false) {
+                break;
+            }
+        }
+    } else {
+        /**
+         * 迭代对象
+         */
+        for (let i in obj) {
+            value = callback.call(obj[i], i, obj[i]);
+
+            if (value === false) {
+                break;
+            }
+        }
+    }
+    return obj;
+};
+```
+五、迭代器模式的应用
+以常用的上传文件功能为例，在不同的浏览器环境下，选择的上传方式是不一样的。因为使用浏览器的上传控件进行上传速度快，可以暂停和续传，所以我们首先会优先使用控件上传。
+如果浏览器没有安装上传控件， 则使用 Flash 上传， 如果连 Flash 也没安装，那就只好使用浏览器原生的表单上传了，代码为
+```
+var getUploadObj = function() {
+    try {
+        return new ActiveXObject("TXFTNActiveX.FTNUpload"); // IE 上传控件
+    } catch (e) {
+        if (supportFlash()) { // supportFlash 函数未提供
+            var str = '<object type="application/x-shockwave-flash"></object>';
+            return $(str).appendTo($('body'));
+        } else {
+            var str = '<input name="file" type="file"/>'; // 表单上传
+            return $(str).appendTo($('body'));
+        }
+    }
+};
+```
+看看上面的代码，为了得到一个 upload 对象，这个 getUploadObj 函数里面充斥了 try，catch 以及 if 条件分支。缺点是显而易见的。
+
+现在来梳理一下问题，目前一共有 3 种可能的上传方式，我们不知道目前浏览器支持那种上传方式，那就需要逐个尝试，直到成功为止，分别定义以下几个函数：
+
+```
+// IE 上传控件
+var getActiveUploadObj = function() {
+    try {
+        return new ActiveXObject("TXFTNActiveX.FTNUpload");
+    } catch (e) {
+        return false;
+    }
+};
+
+// Flash 上传
+var getFlashUploadObj = function() {
+    if (supportFlash()) { // supportFlash 函数未提供
+        var str = '<object type="application/x-shockwave-flash"></object>';
+        return $(str).appendTo($('body'));
+    };
+    return false;
+}
+
+// 表单上传
+var getFormUpladObj = function() {
+    var str = '<input name="file" type="file" class="ui-file"/>';
+    return $(str).appendTo($('body'));
+};
+
+```
+
+在以上三个函数中，如果该函数里面的 upload 对象是可用的，则让函数返回该对象，反之返回 false，提示迭代器继续往后面进行迭代。
+
+那么迭代器只需进行下面这几步工作：
+
+提供一个可以被迭代的方法，使得 getActiveUploadObj，getFlashUploadObj 以及 getFlashUploadObj 依照优先级被循环迭代。
+如果正在被迭代的函数返回一个对象，则表示找到了正确的 upload 对象，反之如果该函数返回 false，则让迭代器继续工作。
+
+```
+var iteratorUpload = function() {
+    for (var i = 0, fn; fn = arguments[i++];) {
+        var upload = fn();
+        if (upload !== false) {
+            return upload;
+        }
+    }
+};
+
+var uploadObj = iteratorUpload( getActiveUploadObj, getFlashUploadObj, getFormUpladObj )
+```
+重构代码之后，可以看到，上传对象的各个函数彼此分离互补干扰，很方便维护和扩展，如果后期增加了 Webkit 控件上传和 HTML5 上传，我们就增加对应的函数功能并在迭代器里添加：
+```
+var getWebkitUploadObj = function(){
+ // 具体代码略
+}
+
+var getHtml5UploadObj = function(){
+ // 具体代码略
+}
+
+// 依照优先级把它们添加进迭代器
+var uploadObj = iteratorUploadObj( getActiveUploadObj, getWebkitUploadObj,
+getFlashUploadObj, getHtml5UploadObj, getFormUploadObj );
+```
