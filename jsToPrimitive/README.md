@@ -4,23 +4,21 @@
 在JS中：[]+[]、[]+{}、{}+[]、{}+{}的结果分别是什么？
 
 一、JS中的类型
-* JS中的值有两种类型：原始类型(Primitive)、对象类型(Object)。
-* 基本类型包括：Undefined、Null、Boolean、Number和String等五种。
-* Undefined类型和Null类型的都只有一个值，即undefined和null；Boolean类型有两个值：true和false；Number类型的值有很多很多；String类型的值理论上有无数个。
-* 所有对象都有valueOf()和toString()方法，它们继承自Object，当然也可能被子类重写。
+* 基本类型
+JS的基本类型包括Undefined、Null、Boolean、Number和String五种。Undefined类型和Null类型的都只有一个值，即undefined和null；
+Boolean类型有两个值：true和false；Number类型的值有很多很多；String类型的值理论上有无数个。
+* 值类型
+JS中的值有原始类型(Primitive)和对象类型(Object)。在做相加等操作时，不是原始类型的要先转换为原始类型，再执行相关的操作。
 
-二、JS中的加法运算规则
-
-对于JS的加法运算：
-1.使用ToPrimitive运算转换左右运算元为原始数据类型（primitive）。
-2.在第一步转换后，如果有运算元出现原始数据类型是“字符串”类型值时，则另一运算元强制转换为字符串，然后做字符串的连接运算
-3.在其他情况时，所有运算元都会转换为原始数据类型的“数字”类型值，然后作数字的相加
-
+二、JS中的加法运算
+1、使用ToPrimitive运算转换左右运算元为原始数据类型（primitive）。
+2、在转换后，如果其中一个运算元出现原始数据类型是“字符串”类型值时，则另一运算元强制转换为字符串，然后做字符串的连接运算。
+3、在其他情况时，所有运算元都会转换为原始数据类型的“数字”类型值，然后作数字的相加。
 
 三、ToPrimitive内部运算
-加号运算符只能用于原始数据类型，对于对象类型的值，需要进行数据转换。
+加号运算符只能用于原始数据类型，对于对象类型的值，需要进行数据转换。在ECMAScript中，有一个抽象的ToPrimitive运算，用于将对象转换为原始数据类型，
+在对象的加法、关系比较或值相等比较的运算中，都会用到。
 
-在ECMAScript中，有一个抽象的ToPrimitive运算，用于将对象转换为原始数据类型，在对象的加法、关系比较或值相等比较的运算中，都会用到。
 关于ToPrimitive的说明语法:
 ```
 ToPrimitive(input, PreferredType?)
@@ -79,6 +77,10 @@ Function对象很少会用到，它的toString也有被覆盖，所以并不是O
 valueOf(): 返回对象本身
 toString(): 返回函数中包含的代码转为字符串值。
 
+* Date对象
+ valueOf(): 返回给定的时间转为UNIX时间(自1 January 1970 00:00:00 UTC起算)，但是以微秒计算的数字值
+ toString(): 返回本地化的时间字符串
+
 五、Number、String、Boolean包装对象
 JS的包装对象是必须使用new关键字进行对象实例化的，直接使用Number()、String()与Boolean()三个强制转换函数的用法。例如new Number(123)，而Number('123')则是强制转换其他类型为数字类型的函数。
 
@@ -93,9 +95,9 @@ valueOf方法返回值: 对应的原始数据类型值
 toString方法返回值: 对应的原始数据类型值，转换为字符串类型时的字符串值
 
 toString方法会比较特别，这三个包装对象里的toString的细部说明如下:
-* Number包装对象的toString方法: 可以有一个传参，可以决定转换为字符串时的进位(2、8、16)
-* String包装对象的toString方法: 与String包装对象中的valueOf相同返回结果
-* Boolean包装对象的toString方法: 返回"true"或"false"字符串
+1.Number包装对象的toString方法: 可以有一个传参，可以决定转换为字符串时的进位(2、8、16)
+2. String包装对象的toString方法: 与String包装对象中的valueOf相同返回结果
+3. Boolean包装对象的toString方法: 返回"true"或"false"字符串
 
 * 强制转换
 Number()、String()与Boolean()三个强制转换函数，所对应的就是在ECMAScript标准中的ToNumber、ToString、ToBoolean三个内部运算转换的对照表。
@@ -107,7 +109,6 @@ null	      +0
 boolean	      true被转换为1,false转换为+0
 number	      无需转换
 string	      由字符串解析为数字。例如，”324″被转换为324
-
 
 通过ToString()把值转化成字符串:
 参数	           结果
@@ -164,22 +165,56 @@ console.log(null+null);            //0
 ```
 console.log([] + []);        //""
 ```
+两个数组相加，左右运算元先调用valueOf(),返回数组本身，调用toString(),返回原始数据类型，即空字符串，作连接操作，得到一个空字符串
 5.空对象 + 空对象
 ```
 console.log({} + {});        //"[object Object][object Object]"
 ```
+两个对象相加，左右运算元先调用valueOf(),返回对象本身，调用toString(),返回原始数据类型，即对象字符串[object Object]，作连接操作，
+得到字符串[object Object][object Object]
+
+console.log({}+{})得到的这样的结果，但是，在有些浏览器例如Firefox、Edge控制台直接输入{}+{}，会得到NaN，因为浏览器会把{} + {}直译为相当于+{}语句，
+因为它们会认为以花括号开头({)的，是一个区块语句的开头，而不是一个对象字面量，所以会认为略过第一个{}，把整个语句认为是个+{}的语句，也就是相当于强制求
+出数字值的Number({})函数调用运算，相当于Number("[object Object]")运算，最后得出的是NaN。如果加上圆括号({}) + {}，则可以避免这样的问题。
+
 6.空对象 + 空数组
 ```
 console.log({} + []);        //"[object Object]"
 ```
+空对象和空数组相加，左右运算元先调用valueOf(),返回对象数组本身，调用toString(),返回原始数据类型，即对象字符串[object Object]和""，作连接操作，得到字符串[object Object]
+
+直接console.log得到的都是一样的值，但是直接在浏览器控制台输入:
+```
+> {} + []
+0
+
+> [] + {}
+"[object Object]"
+```
+{} + []相当于+[]语句，也就是相当于强制求出数字值的Number([])运算，相当于Number("")运算，最后得出的是0数字。
 7.Date对象
 ```
 console.log(1 + (new Date()));       //"1Tue Aug 14 2018 21:18:24 GMT+0800 (中国标准时间)"
+```
+Date对象首选类型String，先调用toString(),得到字符串做字符串连接运算。
+
+要得出Date对象中的valueOf返回值，需要使用一元加号(+)，来强制转换它为数字类型，例如以下的代码:
+```
+console.log(+new Date());
+1534298171747
 ```
 8.Symbols类型
 ES6中新加入的Symbols数据类型，它不算是一般的值也不是对象，它并没有内部自动转型的设计，所以完全不能直接用于加法运算，使用时会报错。
 
 9. +[]/+{}
+```
+console.log(+[]);     // 0
+console.log(+{});     // NaN
+console.log(+null);     //0
+console.log(+true);     //1
+console.log(+undefined);     //NaN
+```
+一元加号运算时，唯一的运算元相当于强制求出数字值的Number([])运算。
 
 六、扩展
 
